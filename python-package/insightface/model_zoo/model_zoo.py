@@ -8,10 +8,10 @@ import os
 import os.path as osp
 import glob
 import onnxruntime
-from .arcface_onnx import *
-from .retinaface import *
+from .arcface_onnx import ArcFaceONNX
+from .retinaface import RetinaFace
 #from .scrfd import *
-from .landmark import *
+from .landmark import Landmark
 from .attribute import Attribute
 from .inswapper import INSwapper
 from ..utils import download_onnx

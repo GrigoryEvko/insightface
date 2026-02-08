@@ -46,16 +46,8 @@ requirements = [
     'onnx',
     'tqdm',
     'requests',
-    'matplotlib',
     'Pillow',
-    'scipy',
-    #'opencv-python',
-    'scikit-learn',
-    'scikit-image',
     'easydict',
-    'cython',
-    'albumentations',
-    'prettytable',
 ]
 
 extensions = [

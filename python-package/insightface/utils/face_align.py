@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from skimage import transform as trans
 
 
 arcface_dst = np.array(
@@ -8,20 +7,78 @@ arcface_dst = np.array(
      [41.5493, 92.3655], [70.7299, 92.2041]],
     dtype=np.float32)
 
-def estimate_norm(lmk, image_size=112,mode='arcface'):
+
+def _umeyama(src, dst, estimate_scale=True):
+    """Estimate N-D similarity transform via Umeyama's algorithm.
+
+    Parameters
+    ----------
+    src : (M, N) array
+        M source points in N dimensions.
+    dst : (M, N) array
+        M destination points in N dimensions.
+    estimate_scale : bool
+        Whether to estimate a scaling component.
+
+    Returns
+    -------
+    T : (N+1, N+1) array
+        Homogeneous similarity transformation matrix.
+    """
+    num = src.shape[0]
+    dim = src.shape[1]
+
+    src_mean = src.mean(axis=0)
+    dst_mean = dst.mean(axis=0)
+
+    src_demean = src - src_mean
+    dst_demean = dst - dst_mean
+
+    A = dst_demean.T @ src_demean / num
+    d = np.ones((dim,), dtype=np.float64)
+    if np.linalg.det(A) < 0:
+        d[dim - 1] = -1
+
+    U, S, Vt = np.linalg.svd(A)
+    rank = np.linalg.matrix_rank(A)
+    if rank == 0:
+        return np.eye(dim + 1, dtype=np.float64)
+
+    T = np.eye(dim + 1, dtype=np.float64)
+    if rank == dim - 1:
+        if np.linalg.det(U) * np.linalg.det(Vt) > 0:
+            T[:dim, :dim] = U @ Vt
+        else:
+            s = d[dim - 1]
+            d[dim - 1] = -1
+            T[:dim, :dim] = U @ np.diag(d) @ Vt
+            d[dim - 1] = s
+    else:
+        T[:dim, :dim] = U @ np.diag(d) @ Vt
+
+    if estimate_scale:
+        scale = 1.0 / src_demean.var(axis=0).sum() * (S * d).sum()
+    else:
+        scale = 1.0
+
+    T[:dim, dim] = dst_mean - scale * (T[:dim, :dim] @ src_mean)
+    T[:dim, :dim] *= scale
+    return T
+
+
+def estimate_norm(lmk, image_size=112, mode='arcface'):
     assert lmk.shape == (5, 2)
-    assert image_size%112==0 or image_size%128==0
-    if image_size%112==0:
-        ratio = float(image_size)/112.0
+    assert image_size % 112 == 0 or image_size % 128 == 0
+    if image_size % 112 == 0:
+        ratio = float(image_size) / 112.0
         diff_x = 0
     else:
-        ratio = float(image_size)/128.0
-        diff_x = 8.0*ratio
+        ratio = float(image_size) / 128.0
+        diff_x = 8.0 * ratio
     dst = arcface_dst * ratio
-    dst[:,0] += diff_x
-    tform = trans.SimilarityTransform()
-    tform.estimate(lmk, dst)
-    M = tform.params[0:2, :]
+    dst[:, 0] += diff_x
+    T = _umeyama(lmk.astype(np.float64), dst.astype(np.float64))
+    M = T[0:2, :]
     return M
 
 def norm_crop(img, landmark, image_size=112, mode='arcface'):
@@ -52,19 +109,18 @@ def square_crop(im, S):
 def transform(data, center, output_size, scale, rotation):
     scale_ratio = scale
     rot = float(rotation) * np.pi / 180.0
-    #translation = (output_size/2-center[0]*scale_ratio, output_size/2-center[1]*scale_ratio)
-    t1 = trans.SimilarityTransform(scale=scale_ratio)
+    cos_r, sin_r = np.cos(rot), np.sin(rot)
     cx = center[0] * scale_ratio
     cy = center[1] * scale_ratio
-    t2 = trans.SimilarityTransform(translation=(-1 * cx, -1 * cy))
-    t3 = trans.SimilarityTransform(rotation=rot)
-    t4 = trans.SimilarityTransform(translation=(output_size / 2,
-                                                output_size / 2))
-    t = t1 + t2 + t3 + t4
-    M = t.params[0:2]
-    cropped = cv2.warpAffine(data,
-                             M, (output_size, output_size),
-                             borderValue=0.0)
+    # Compose: scale -> translate(-cx,-cy) -> rotate -> translate(+out/2,+out/2)
+    # skimage SimilarityTransform.__add__ composes as: (t1+t2+t3+t4) = t4 @ t3 @ t2 @ t1
+    t1 = np.array([[scale_ratio, 0, 0], [0, scale_ratio, 0], [0, 0, 1]], dtype=np.float64)
+    t2 = np.array([[1, 0, -cx], [0, 1, -cy], [0, 0, 1]], dtype=np.float64)
+    t3 = np.array([[cos_r, -sin_r, 0], [sin_r, cos_r, 0], [0, 0, 1]], dtype=np.float64)
+    t4 = np.array([[1, 0, output_size / 2], [0, 1, output_size / 2], [0, 0, 1]], dtype=np.float64)
+    T = t4 @ t3 @ t2 @ t1
+    M = T[0:2]
+    cropped = cv2.warpAffine(data, M, (output_size, output_size), borderValue=0.0)
     return cropped, M
 
 
