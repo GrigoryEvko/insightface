@@ -9,7 +9,14 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-from .cython import mesh_core_cython
+
+try:
+    from .cython import mesh_core_cython
+except ImportError:
+    raise ImportError(
+        "face3d.mesh.light requires Cython mesh extensions. "
+        "Install with: pip install insightface[all] and rebuild."
+    )
 
 def get_normal(vertices, triangles):
     ''' calculate normal direction in each vertex

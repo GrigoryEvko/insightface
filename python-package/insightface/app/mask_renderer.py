@@ -1,14 +1,29 @@
 import os, sys, datetime
 import numpy as np
 import os.path as osp
-import albumentations as A
-from albumentations.core.transforms_interface import ImageOnlyTransform
+import cv2
+
+try:
+    import albumentations as A
+    from albumentations.core.transforms_interface import ImageOnlyTransform
+except ImportError:
+    raise ImportError(
+        "mask_renderer requires the 'rendering' extras. "
+        "Install with: pip install insightface[rendering]"
+    )
+
+try:
+    from ..thirdparty import face3d
+except ImportError:
+    raise ImportError(
+        "mask_renderer requires face3d (scipy, Cython extensions). "
+        "Install with: pip install insightface[rendering]"
+    )
+
 from .face_analysis import FaceAnalysis
 from ..utils import get_model_dir
-from ..thirdparty import face3d
 from ..data import get_image as ins_get_image
 from ..utils import DEFAULT_MP_NAME
-import cv2
 
 class MaskRenderer:
     def __init__(self, name=DEFAULT_MP_NAME, root='~/.insightface', insfa=None):

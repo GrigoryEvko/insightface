@@ -13,7 +13,14 @@ from __future__ import print_function
 
 import numpy as np
 import os
-from skimage import io
+
+try:
+    from skimage import io as skimage_io
+except ImportError:
+    raise ImportError(
+        "face3d.mesh_numpy.io requires scikit-image. "
+        "Install with: pip install insightface[rendering]"
+    )
 
 ## TODO
 ## TODO: c++ version
@@ -167,4 +174,4 @@ def write_obj_with_colors_texture(obj_name, vertices, triangles, colors, texture
         f.write(s)
 
     # write texture as png
-    io.imsave(texture_name, texture)
+    skimage_io.imsave(texture_name, texture)

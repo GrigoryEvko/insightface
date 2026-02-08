@@ -1,15 +1,15 @@
-#from __future__ import absolute_import
-#from cython import mesh_core_cython
-#import io
-#import vis
-#import transform
-#import light
-#import render
+from . import transform
 
-from .cython import mesh_core_cython
+try:
+    from .cython import mesh_core_cython
+except ImportError:
+    raise ImportError(
+        "face3d.mesh requires Cython mesh extensions. "
+        "Install with: pip install insightface[all] and rebuild."
+    )
+
 from . import io
 from . import vis
-from . import transform
 from . import light
 from . import render
 

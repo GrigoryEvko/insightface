@@ -3,9 +3,16 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import matplotlib.pyplot as plt
-from skimage import measure
-from mpl_toolkits.mplot3d import Axes3D
+
+try:
+    import matplotlib.pyplot as plt
+    from skimage import measure
+    from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+    raise ImportError(
+        "face3d.mesh.vis requires matplotlib and scikit-image. "
+        "Install with: pip install insightface[rendering]"
+    )
 
 def plot_mesh(vertices, triangles, subplot = [1,1,1], title = 'mesh', el = 90, az = -90, lwdt=.1, dist = 6, color = "grey"):
 	'''

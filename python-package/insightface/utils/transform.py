@@ -1,13 +1,19 @@
 import cv2
 import math
 import numpy as np
-from skimage import transform as trans
 
 
 def transform(data, center, output_size, scale, rotation):
+    """Similarity transform using skimage (lazy import).
+
+    NOTE: This function requires scikit-image. The core face analysis
+    pipeline uses face_align.transform() instead (pure numpy).
+    This is kept for backward compatibility with external callers.
+    """
+    from skimage import transform as trans
+
     scale_ratio = scale
     rot = float(rotation) * np.pi / 180.0
-    #translation = (output_size/2-center[0]*scale_ratio, output_size/2-center[1]*scale_ratio)
     t1 = trans.SimilarityTransform(scale=scale_ratio)
     cx = center[0] * scale_ratio
     cy = center[1] * scale_ratio

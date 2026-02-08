@@ -17,7 +17,13 @@ from __future__ import print_function
 import numpy as np
 from time import time
 
-from .cython import mesh_core_cython
+try:
+    from .cython import mesh_core_cython
+except ImportError:
+    raise ImportError(
+        "face3d.mesh.render requires Cython mesh extensions. "
+        "Install with: pip install insightface[all] and rebuild."
+    )
 
 def rasterize_triangles(vertices, triangles, h, w):
     ''' 

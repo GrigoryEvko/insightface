@@ -3,7 +3,14 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import scipy.io as sio
+
+try:
+    import scipy.io as sio
+except ImportError:
+    raise ImportError(
+        "face3d.morphable_model.load requires scipy. "
+        "Install with: pip install insightface[rendering]"
+    )
 
 ### ---------------------------------  load BFM data
 def load_BFM(model_path):

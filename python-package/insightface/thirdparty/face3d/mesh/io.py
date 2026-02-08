@@ -4,10 +4,23 @@ from __future__ import print_function
 
 import numpy as np
 import os
-from skimage import io
 from time import time
 
-from .cython import mesh_core_cython
+try:
+    from skimage import io as skimage_io
+except ImportError:
+    raise ImportError(
+        "face3d.mesh.io requires scikit-image. "
+        "Install with: pip install insightface[rendering]"
+    )
+
+try:
+    from .cython import mesh_core_cython
+except ImportError:
+    raise ImportError(
+        "face3d.mesh.io requires Cython mesh extensions. "
+        "Install with: pip install insightface[all] and rebuild."
+    )
 
 ## TODO
 ## TODO: c++ version
@@ -139,4 +152,4 @@ def write_obj_with_colors_texture(obj_name, vertices, triangles, colors, texture
         f.write(s)
 
     # write texture as png
-    io.imsave(texture_name, texture)
+    skimage_io.imsave(texture_name, texture)
